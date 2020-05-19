@@ -26,7 +26,6 @@ from my_tools.plotly_discrete_colorscale import plotly_discrete_colorscale
 from data_visualisation import create_fire_heatmap
 
 ecdc = load_ecdc()
-# regions = df['region'].unique()
 region_location = ecdc[['region', 'location']]
 europe_countries = region_location[region_location['region'] == 'Europe']['location'].unique().tolist()
 asia_countries = region_location[region_location['region'] == 'Asia']['location'].unique().tolist()
@@ -35,35 +34,11 @@ all_countries = ecdc['location'].unique().tolist()
 
 country_groups_options = [{'label': 'Europe', 'value': 'Europe'}, {'label': 'Asia', 'value': 'Asia'}, {'label': 'Other', 'value': 'Other'}, {'label': 'All', 'value': 'All'}]
 
-# europe_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'Europe'].iterrows()]
-# asia_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'Asia'].iterrows()]
-# africa_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'Africa'].iterrows()]
-# america_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'America'].iterrows()]
-# oceania_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'Oceania'].iterrows()]
-# other_countries = [{'label': r['location'], 'value': r['location']} for _, r in df[df['region'] == 'Other'].iterrows()]
-# print(europe_countries)
-# all_regions = [{'label': r, 'value': r} for r in regions]
-# all_countries = [{'label': c, 'value': c} for c in countries]
-
 
 selected_countries = []
 
-# external_stylesheets = ["https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"]
-# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # first remove other stylesheets in assets
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
-#
-# layout = dict(
-#     autosize=True,
-#     automargin=True,
-#     # margin=dict(l=30, r=30, b=20, t=40),
-#     hovermode="closest",
-#     plot_bgcolor="#F9F9F9",
-#     paper_bgcolor="#F9F9F9",
-#     legend=dict(font=dict(size=10), orientation="h")
-#     # title="Satellite Overview",
-# )
 
 header = html.Div([
     dbc.Row(dbc.Col(html.Div(html.H1('COVID-19 Dashboard')), width=5),
@@ -219,10 +194,6 @@ def toggle_modal(n1, n2, is_open):
         return not is_open
     return is_open
 
-
-# @app.callback(Output('modal2', 'children'),
-#               [Input('expand_button1', 'n_clicks')])
-# def expand_graph(n):
 
 
 if __name__ == '__main__':
