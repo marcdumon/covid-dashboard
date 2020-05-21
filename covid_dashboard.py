@@ -10,6 +10,8 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 from dash.dependencies import Input, Output, State
+
+from component_factory import generate_graph_componet
 from data_process import load_ecdc
 
 import numpy as np
@@ -22,44 +24,43 @@ from plotly.tools import FigureFactory as FF
 import plotly.figure_factory as ff
 from my_tools.plotly_discrete_colorscale import plotly_discrete_colorscale
 
-# DATA
 from data_visualisation import create_fire_heatmap
 
+# DATA
 ecdc = load_ecdc()
+# Remove 'Cases_on_an_international_conveyance_Japan'
+ecdc = ecdc.loc[ecdc['region'] != 'Other']
+# todo: Save this to file and allow saving of new countrylists
 region_location = ecdc[['region', 'location']]
 europe_countries = region_location[region_location['region'] == 'Europe']['location'].unique().tolist()
 asia_countries = region_location[region_location['region'] == 'Asia']['location'].unique().tolist()
-other_countries = region_location[region_location['region'] == 'Other']['location'].unique().tolist()
 all_countries = ecdc['location'].unique().tolist()
+group1 = ['Belgium', 'Netherlands', 'France', 'Germany', 'Italy', 'Spain', 'United_Kingdom', 'Sweden', 'Norway', 'Singapore', 'Taiwan', 'Vietnam', 'United_States_of_America']
 
-country_groups_options = [{'label': 'Europe', 'value': 'Europe'}, {'label': 'Asia', 'value': 'Asia'}, {'label': 'Other', 'value': 'Other'}, {'label': 'All', 'value': 'All'}]
-
-
+country_groups_options = [
+    {'label': 'Europe', 'value': 'Europe'},
+    {'label': 'Asia', 'value': 'Asia'},
+    {'label': 'All', 'value': 'All'},
+    {'label': 'Group1', 'value': 'Group1'}
+]
 selected_countries = []
 
+# HTML
 app = dash.Dash(__name__)
-app.config.suppress_callback_exceptions = True
+# app.config.suppress_callback_exceptions = True # todo: What is this
 
-header = html.Div([
-    dbc.Row(dbc.Col(html.Div(html.H1('COVID-19 Dashboard')), width=5),
-            justify='center'),
-    dbc.Row(
+header = html.Div(
+    [dbc.Row(
         [
-            dbc.Col('x ' * 1000, width=2),
-            dbc.Col(html.P('y ' * 1000), width=2),
-            dbc.Col(html.P('z ' * 1000), width=2),
-        ],
-        justify='center',
-        no_gutters=True)
-])
+            dbc.Col(html.H1('COVID-19 Dashboard'), style={'text-align': 'left'},width=3),
+            dbc.Col(dbc.Button('Select Countries', id='open', outline=True, color='secondary', style={'margin': '0rem 1rem 0rem 0rem', })
+                    , width=3),
+            dbc.Col(html.P('y ' * 10), width=3),
+            dbc.Col(html.P('z ' * 10), width=3),
 
-country_selection = html.Div([
-    dbc.Row(dbc.Col(
-        [
-            dbc.Button("Select countries", id="open"),
             dbc.Modal(
                 [
-                    dbc.ModalHeader("Header"),
+                    dbc.ModalHeader('Header'),
                     dbc.ModalBody(html.Div([
                         dcc.Checklist(id='checklist_country_groups',
                                       options=country_groups_options,
@@ -68,23 +69,73 @@ country_selection = html.Div([
                         dcc.Dropdown(id='dropdown_countries',
                                      options=[{'label': c, 'value': c} for c in all_countries],
                                      multi=True)])),
-                    dbc.ModalFooter(dbc.Button("Close", id="close", className="ml-auto")),
+                    dbc.ModalFooter(dbc.Button('Close', id='close', className='ml-auto')),
                 ],
-                id="modal",
-                size="lg",
+                id='modal',
+                size='lg',
                 centered=True)
+        ],
+        # justify='center',
+        align='center',
+        # no_gutters=False,
+    )
+    ], style={
+        'width': '100%',
+        # 'margin-top': '10px',
+        # 'margin-bottom': '25px',
+        'margin-left':'10px',
+        'top': '0px',
+        'overflow': 'hidden',
+        'position': 'fixed',
+        'z-index': '100',
+        'background-color': 'white',
+        'border-bottom':'1px solid lightgray'
+    },
+)
+
+country_selection = html.Div([
+    dbc.Row(dbc.Col(
+        [
+            dbc.Button('Select countries', id='open', ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader('Header'),
+                    dbc.ModalBody(html.Div([
+                        dcc.Checklist(id='checklist_country_groups',
+                                      options=country_groups_options,
+                                      value=['Europe'],
+                                      labelStyle={'display': 'inline-block'}),
+                        dcc.Dropdown(id='dropdown_countries',
+                                     options=[{'label': c, 'value': c} for c in all_countries],
+                                     multi=True)])),
+                    dbc.ModalFooter(dbc.Button('Close', id='close', className='ml-auto')),
+                ],
+                id='modal',
+                size='lg',
+                centered=True,
+            ),
+
         ]
-    ), justify='center')
+    ), justify='center',
+        style={
+            # 'position': 'fixed',
+            # 'z-index': '100'
+        }
+    )
 ])
+
+
 
 graphs = html.Div([
     dbc.Row(
         [
-            dbc.Col([
-                dbc.Button('Expand graph', id='expand_button1'),
-                dcc.Graph(id='test_graph', config={'displayModeBar': False})], width=4),
-            dbc.Col(dcc.Graph(id='test_graph1'), width=4),
-            dbc.Col(dcc.Graph(id='test_graph2'), width=4)
+            dbc.Col(html.Div(
+                generate_graph_componet('fire_heatmap', 'Fire Heatmap')
+                # , style={'border': '1px black solid'}
+            ), width=5),
+
+            # dbc.Col(html.Img(id='image'), width=2),
+            dbc.Col(dcc.Graph(id='test_graph2'), width=2)
         ]),
     dbc.Row(
         [
@@ -94,31 +145,40 @@ graphs = html.Div([
             dbc.Col(dcc.Graph(id='test_graph5'), width=4),
             dbc.Col(dcc.Graph(id='test_graph6'), width=4)
         ]),
-])
+],
+    id='div_xxx'
 
-
-
-expanded_graph = dbc.Modal(
-    [dbc.ModalHeader(country_selection),
-     dbc.ModalBody(
-         dcc.Graph(id='test_graph_expanded',
-                   config={'displayModeBar': False},
-                   style={"height": "80vh"})),
-     dbc.ModalFooter(dbc.Button("Close", id="close2"))],
-    id="modal2",
-    centered=True,
-    style={"max-width": "none", "width": "90%"}
 )
 
-app.layout = dbc.Container(
-    [
-        header,
-        # country_selection,
-        graphs,
-        expanded_graph
+xxx=html.Div(id='xxx')
 
-    ],
-    fluid=True, )
+app.layout = html.Div([header,
+                       dcc.Tabs([
+                           dcc.Tab(
+                               dbc.Container(
+                                   [xxx,graphs,
+                                       #
+                                       # dbc.Row([
+                                       #     # dbc.Col(sidebar, width=1, id='sidebar',
+                                       #     #         ),
+                                       #
+                                       #     dbc.Col(graphs, ),
+                                       # ])
+
+                                   ],
+                                   fluid=True,
+                               ),
+                               label="WORLD"
+                           ),
+                           dcc.Tab(label='BELGIUM'
+                                   )
+                       ]
+                       )
+                       ],
+                      style={
+                          'margin-top': '100px',
+                      }
+                      )
 
 
 @app.callback(Output('dropdown_countries', 'value'),
@@ -128,13 +188,20 @@ def add_country_group(country_groups):
     for country_group in country_groups:
         if country_group == 'Europe': countries += europe_countries
         if country_group == 'Asia': countries += asia_countries
-        if country_group == 'Other': countries += other_countries
         if country_group == 'All': countries += all_countries
+        if country_group == 'Group1': countries += group1
     countries = sorted(list(set(countries)))
     return countries
 
+# @app.callback(Output('xxx', 'children'),
+#     [Input('div_xxx','n_clicks')])
+# def test_div_click(n):
+#     print(n)
+#     return(n)
 
-@app.callback([Output('test_graph', 'figure'), Output('test_graph_expanded', 'figure')],
+#  GRAPHS CALLBACKS
+@app.callback([Output('fire_heatmap', 'figure'), Output('fire_heatmap_expanded', 'figure')],
+# @app.callback([Output('image', 'src'), Output('fire_heatmap_expanded', 'figure')],
               [Input('dropdown_countries', 'value')])
 def generate_test_graph(countries):
     e = ecdc[ecdc['location'].isin(countries)]
@@ -170,13 +237,24 @@ def generate_test_graph(countries):
         # displayModeBar=False,
         plot_bgcolor='#66DD66')
 
-    return (fig, fig)
+
+
+    # fig.write_image('xxx.png')
+    # img_bytes = fig.to_image(format="png")
+    # img_bytes=''
+    return fig,fig
+    # return (app.get_relative_path('/media/md/Development/COVID-19/0_covid.v0/src/xxx.png'), fig)
+    # return (f'data:image/png;base64,{img_bytes}', fig)
+
+
+def expand_graph():
+    pass
 
 
 @app.callback(
-    Output("modal", "is_open"),
-    [Input("open", "n_clicks"), Input("close", "n_clicks")],
-    [State("modal", "is_open")],
+    Output('modal', 'is_open'),
+    [Input('open', 'n_clicks'), Input('close', 'n_clicks')],
+    [State('modal', 'is_open')],
 )
 def toggle_modal(n1, n2, is_open):
     if n1 or n2:
@@ -185,16 +263,21 @@ def toggle_modal(n1, n2, is_open):
 
 
 @app.callback(
-    Output("modal2", "is_open"),
-    [Input("expand_button1", "n_clicks"), Input("close2", "n_clicks")],
-    [State("modal2", "is_open")],
+    Output('fire_heatmap_modal', 'is_open'),
+    # [Input('fire_heatmap_expand_button', 'n_clicks')],
+    [Input('div_xxx', 'n_clicks')],
+    [State('fire_heatmap_modal', 'is_open')],
 )
-def toggle_modal(n1, n2, is_open):
-    if n1 or n2:
+def toggle_modal(n1, is_open):
+    if n1:
         return not is_open
     return is_open
 
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    pass
+    app.run_server(debug=True, host='0.0.0.0', port=8050,
+                   dev_tools_hot_reload=True,
+                   dev_tools_hot_reload_interval=1,
+                   )
