@@ -30,19 +30,20 @@ def generate_graph_componet(name, title=''):
     :param title:
     :return:
     """
-    graph_html = [dbc.Button('Expand graph', id=f'{name}_expand_button', color='secondary', outline=True, style={'width': '100%'}),
-                  dcc.Graph(id=name, config={'displayModeBar': False}),
-                  dbc.Modal([dbc.ModalHeader(title),
-                             dbc.ModalBody(dcc.Graph(id=f'{name}_expanded',
-                                                     config={'displayModeBar': False},
-                                                     style={'height': '80vh'})),
-                             # dbc.ModalFooter(dbc.Button("Close", id=f'{name}_close_button'))
-                             ],
-                            id=f'{name}_modal',
-                            centered=True,
-                            style={"max-width": "none", "width": "90%"}
-                            ),
-                  ]
+    graph_html = [
+        # dbc.Button('Expand graph', id=f'{name}_expand_button', color='secondary', outline=True, style={'width': '100%'}),
+        dcc.Graph(id=name, config={'displayModeBar': False}),
+        dbc.Modal([dbc.ModalHeader(title),
+                   dbc.ModalBody(dcc.Graph(id=f'{name}_expanded',
+                                           config={'displayModeBar': False},
+                                           style={'height': '80vh'})),
+                   # dbc.ModalFooter(dbc.Button("Close", id=f'{name}_close_button'))
+                   ],
+                  id=f'{name}_modal',
+                  centered=True,
+                  style={"max-width": "none", "width": "90%"}
+                  ),
+    ]
 
     return graph_html
 
