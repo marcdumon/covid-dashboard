@@ -10,6 +10,7 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 from plotly.graph_objs import Figure
 
 from component_factory import generate_graph_componet
@@ -46,7 +47,7 @@ country_groups_options = [
     {'label': 'All', 'value': 'All'},
     {'label': 'Group1', 'value': 'Group1'}
 ]
-selected_countries = []
+# selected_countries = []
 
 # HTML
 # app = dash.Dash(__name__, external_stylesheets=['my_css.css', 'bootstrap.css'])
@@ -68,12 +69,13 @@ header = html.Div(
                     dbc.ModalBody(html.Div([
                         dcc.Checklist(id='checklist_country_groups',
                                       options=country_groups_options,
-                                      value=['Europe'],
+                                      # value=['Europe'],
                                       labelStyle={'display': 'inline-block'},
-                                      persistence=True),
+                                      persistence=True
+                                      ),
                         dcc.Dropdown(id='dropdown_countries',
                                      options=[{'label': c, 'value': c} for c in all_countries],
-                                     value=['Belgium'],
+                                     # value=['Belgium'],
                                      multi=True,
                                      persistence=True)])),
                     dbc.ModalFooter(dbc.Button('Close', id='close', className='ml-auto')),
@@ -81,11 +83,7 @@ header = html.Div(
                 id='modal',
                 size='lg',
                 centered=True),
-            # html.Div(id='xxx',
-            #          # style={'display': 'none'}
-            #          )
-
-            ],
+        ],
         # justify='center',
         align='center',
         # no_gutters=False,
@@ -104,32 +102,22 @@ header = html.Div(
     },
 )
 
-country_selection = html.Div([
-    dbc.Row(dbc.Col(
-        [
-            dbc.Button('Select countries', id='open', ),
-
-
-        ]
-    ), justify='center',
-        style={
-            # 'position': 'fixed',
-            # 'z-index': '100'
-        }
-    )
-])
-
 graphs = html.Div([
     dbc.Row(
         [
             dbc.Col(html.Div(
                 generate_graph_componet('fire_heatmap', 'Fire Heatmap'),
                 # , style={'border': '1px black solid'}
-                id='div_xxx'
+                id='div_fire_heatmap'
             ), width=5),
 
             # dbc.Col(html.Img(id='image'), width=2),
-            dbc.Col(dcc.Graph(id='test_graph2'), width=2)
+            # dbc.Col(dcc.Graph(id='test_graph2'), width=2)
+            dbc.Col(html.Div(
+                generate_graph_componet('test_graph2', 'test graph2'),
+                # , style={'border': '1px black solid'}
+                id='div_test_graph2'
+            ), width=5)
         ]),
     dbc.Row(
         [
@@ -140,12 +128,13 @@ graphs = html.Div([
             dbc.Col(dcc.Graph(id='test_graph6'), width=4)
         ]),
 ],
-
 )
 
-# xxx = html.Div(id='xxx')
+store = dcc.Store(id='tmp_countries')
 
 app.layout = html.Div([header,
+                       store,
+
                        dcc.Tabs([
                            dcc.Tab(graphs,
                                    label="WORLD"
@@ -158,88 +147,67 @@ app.layout = html.Div([header,
                       style={'margin-top': '100px', }
                       )
 
-#
-# @app.callback(Output('dropdown_countries', 'value'),
-#               [Input('checklist_country_groups', 'value')],
-#               [State('dropdown_countries', 'value')])
-# def add_country_group(country_groups, countries):
-#     print(countries)
-#     print(country_groups)
-#     if country_groups:
-#         print('xxxxxxxxxxxxx')
-#         if not countries:
-#             print('yyyyyyyyyyyyyyy')
-#             countries = []
-#         for country_group in country_groups:
-#             if country_group == 'Europe': countries += europe_countries
-#             if country_group == 'Asia': countries += asia_countries
-#             if country_group == 'All': countries += all_countries
-#             if country_group == 'Group1': countries += group1
-#         countries = sorted(list(set(countries)))
-#     return countries
-#
-
-
 
 @app.callback(Output('dropdown_countries', 'value'),
               [Input('checklist_country_groups', 'value')],
               )
 def add_country_group(country_groups):
-    countries=[]
-    for country_group in country_groups:
-        if country_group == 'Europe': countries += europe_countries
-        if country_group == 'Asia': countries += asia_countries
-        if country_group == 'All': countries += all_countries
-        if country_group == 'Group1': countries += group1
-    countries = sorted(list(set(countries)))
-    return countries
+    if country_groups is None:
+        pass
+        raise PreventUpdate
+    countries = []
+    if country_groups:
+        for country_group in country_groups:
+            if country_group == 'Europe': countries += europe_countries
+            if country_group == 'Asia': countries += asia_countries
+            if country_group == 'All': countries += all_countries
+            if country_group == 'Group1': countries += group1
+        countries = sorted(list(set(countries)))
 
-
+        return countries
 
 
 #  GRAPHS CALLBACKS
 @app.callback([Output('fire_heatmap', 'figure'), Output('fire_heatmap_expanded', 'figure')],
-              # @app.callback([Output('image', 'src'), Output('fire_heatmap_expanded', 'figure')],
               [Input('dropdown_countries', 'value')])
-def generate_test_graph(countries):
+def generate_fire_heatmap(countries):
+    print('Countries: ', countries)
+    if countries is None:
+        raise PreventUpdate
 
-    if countries:
-        e = ecdc[ecdc['location'].isin(countries)]
-        df = e.copy()
-        # Set negative cases to 0
-        df['cases'][df['cases'] < 0] = 0
+    e = ecdc[ecdc['location'].isin(countries)]
+    df = e.copy()
+    # Set negative cases to 0
+    df['cases'][df['cases'] < 0] = 0
 
-        # Add rolling mean
-        rolling = 7
-        df['rolling_cases'] = df.groupby(['location'])['cases'].rolling(rolling).mean().reset_index(0)['cases']
-        df.fillna(0, inplace=True)
-        # Sort x-axis
-        n = 60
-        sort_column = 'cases'
-        from_date = max(df['date']) - pd.DateOffset(n)
-        sort = df[df['date'] > from_date].groupby(['location'])[sort_column].sum().sort_values(ascending=False).index.values
-        df['sort'] = pd.Categorical(df['location'], categories=sort, ordered=True)  # See https://stackoverflow.com/questions/26707171/sort-pandas-dataframe-based-on-list
-        df.sort_values('sort', inplace=True)
-        df.drop('sort', axis=1, inplace=True)
-        # fig = create_fire_heatmap(df, column='rolling_cases', showscale=True)
-        fig = create_fire_heatmap(df, column='cases', showscale=False)
+    # Add rolling mean
+    rolling = 7
+    df['rolling_cases'] = df.groupby(['location'])['cases'].rolling(rolling).mean().reset_index(0)['cases']
+    df.fillna(0, inplace=True)
+    # Sort x-axis
+    n = 60
+    sort_column = 'cases'
+    from_date = max(df['date']) - pd.DateOffset(n)
+    sort = df[df['date'] > from_date].groupby(['location'])[sort_column].sum().sort_values(ascending=False).index.values
+    df['sort'] = pd.Categorical(df['location'], categories=sort, ordered=True)  # See https://stackoverflow.com/questions/26707171/sort-pandas-dataframe-based-on-list
+    df.sort_values('sort', inplace=True)
+    df.drop('sort', axis=1, inplace=True)
+    # fig = create_fire_heatmap(df, column='rolling_cases', showscale=True)
+    fig = create_fire_heatmap(df, column='cases', showscale=False)
 
-        fig.update_layout(
-            margin=dict(t=2, r=2, b=2, l=2),
-            # margin=dict(t=2, r=2, l=2),
-            # showlegend=False,
-            # width=1300,
-            # height=900,
-            autosize=True,
-            xaxis_showgrid=False, yaxis_showgrid=False,
-            xaxis_fixedrange=True, yaxis_fixedrange=True,  # disable zoom
-            xaxis_showspikes=True, yaxis_showspikes=True,
-            # displayModeBar=False,
-            plot_bgcolor='#66DD66')
-        return fig, fig
-    fig = Figure()  # Empty figure if countries is empty
+    fig.update_layout(
+        margin=dict(t=2, r=2, b=2, l=2),
+        # margin=dict(t=2, r=2, l=2),
+        # showlegend=False,
+        # width=1300,
+        # height=900,
+        autosize=True,
+        xaxis_showgrid=False, yaxis_showgrid=False,
+        xaxis_fixedrange=True, yaxis_fixedrange=True,  # disable zoom
+        xaxis_showspikes=True, yaxis_showspikes=True,
+        # displayModeBar=False,
+        plot_bgcolor='#66DD66')
     return fig, fig
-
 
 
 @app.callback(
@@ -253,17 +221,29 @@ def toggle_modal(n1, n2, is_open):
     return is_open
 
 
-@app.callback(
-    Output('fire_heatmap_modal', 'is_open'),
-    # [Input('fire_heatmap_expand_button', 'n_clicks')],
-    [Input('div_xxx', 'n_clicks')],
-    [State('fire_heatmap_modal', 'is_open')],
-)
-def toggle_modal(n1, is_open):
-    if n1:
-        return not is_open
-    return is_open
+for name in ['fire_heatmap', 'test_graph2']:
+    @app.callback(
+        Output(f'{name}_modal', 'is_open'),
+        # [Input('fire_heatmap_expand_button', 'n_clicks')],
+        [Input(f'div_{name}', 'n_clicks')],
+        [State(f'{name}_modal', 'is_open')],
+    )
+    def toggle_modal(n1, is_open):
+        if n1:
+            return not is_open
+        return is_open
 
+# @app.callback(
+#     Output('fire_heatmap_modal', 'is_open'),
+#     # [Input('fire_heatmap_expand_button', 'n_clicks')],
+#     [Input('div_xxx', 'n_clicks')],
+#     [State('fire_heatmap_modal', 'is_open')],
+# )
+# def toggle_modal(n1, is_open):
+#     if n1:
+#         return not is_open
+#     return is_open
+#
 
 if __name__ == '__main__':
     pass
@@ -273,4 +253,3 @@ if __name__ == '__main__':
                    dev_tools_hot_reload=True,
                    dev_tools_hot_reload_interval=1,
                    )
-
