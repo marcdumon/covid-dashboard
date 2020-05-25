@@ -1,6 +1,6 @@
 # --------------------------------------------------------------------------------------------------------
 # 2020/05/20
-# src - component_factory.py
+# src - html_factory.py
 # md
 # --------------------------------------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ import plotly.figure_factory as ff
 from my_tools.plotly_discrete_colorscale import plotly_discrete_colorscale
 
 
-def generate_graph_componet(name, title=''):
+def generate_graph_component(name, titel=''):
     """
     Generates html code for a graph, including expand button and expand modal
     :param name:
@@ -31,22 +31,27 @@ def generate_graph_componet(name, title=''):
     :return:
     """
     graph_html = [
-        # dbc.Button('Expand graph', id=f'{name}_expand_button', color='secondary', outline=True, style={'width': '100%'}),
         dcc.Graph(id=name, config={'displayModeBar': False}),
-        dbc.Modal([dbc.ModalHeader(title),
-                   dbc.ModalBody(dcc.Graph(id=f'{name}_expanded',
-                                           config={'displayModeBar': False},
-                                           style={'height': '80vh'})),
-                   # dbc.ModalFooter(dbc.Button("Close", id=f'{name}_close_button'))
-                   ],
-                  id=f'{name}_modal',
-                  centered=True,
-                  style={"max-width": "none", "width": "90%"}
-                  ),
-    ]
+        dbc.Modal([
+            dbc.ModalHeader(titel, style={'margin': '0'}),
+            dbc.ModalBody([dcc.Graph(id=f'expanded_{name}',
+                                     config={'displayModeBar': False},
+                                     style={'height': '75vh'}),
+                           html.Img(src='assets/images/config.png', id=f'config_{name}',
+                           className='config-graph')
+                           ]),
 
+            # dbc.ModalFooter(),
+        ],
+            id=f'modal_expanded_{name}',
+            centered=True,
+            style={"max-width": "none", "width": "90%"}
+        ),
+
+
+    ]
     return graph_html
 
 
 if __name__ == '__main__':
-    print(generate_graph_componet(('new_fantastic_graph')))
+    print(generate_graph_component(('new_fantastic_graph')))

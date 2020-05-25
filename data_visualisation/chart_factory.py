@@ -22,7 +22,7 @@ def add_new_line(fig, x, y, name, mode='lines+markers'):
 
 
 def add_new_mean_line(fig, x, y, n, name, mode='lines+markers'):
-    trace = go.Scatter(x=x, y=y.rolling(n).mean(), mode=mode, name=f'{name}_ma{n}')
+    trace = go.Scatter(x=x, y=y.rolling(n).mean(), mode=mode, name=f'{name}_ma{n}', marker=dict(size=3))
     fig.add_trace(trace)
     return fig
 

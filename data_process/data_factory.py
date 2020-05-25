@@ -43,7 +43,7 @@ def download_sciensano():
     df.to_csv(data_path / 'external/sciensano.csv')
 
 
-def load_ecdc(): # Todo: Replace
+def load_ecdc():
     df = pd.read_csv(data_path / 'external/ecdc.csv')
 
     df.rename(columns={'dateRep': 'date', 'countriesAndTerritories': 'location', 'continentExp': 'region'}, inplace=True)
